@@ -1,4 +1,4 @@
-import org.ggp.base.util.statemachine.{Move, MachineState, Role}
+import org.ggp.base.util.statemachine.{MachineState, Move, Role}
 
 import scala.collection.JavaConversions._
 
@@ -7,7 +7,11 @@ class AlphaBetaPlayer extends NotifyingPlayer {
     override def bestmove(role: Role, state: MachineState) = {
         println(s"Starting bestmove, user: ${role.getName}")
         val actions = getStateMachine.getLegalMoves(state, role)
-        actions.maxBy(a => minscore(role, a, state, -100, 1000))
+        actions.maxBy(a => {
+            val result = minscore(role, a, state, 0, 100)
+            println(s"Move: $a result = $result")
+            result
+        })
     }
 
     /**
@@ -21,9 +25,9 @@ class AlphaBetaPlayer extends NotifyingPlayer {
       return alpha}
       */
 
-    def maxscore(role: Role, state: MachineState, alpha: Int, beta: Int) : Int = {
-        def helper(actions: List[Move], curAlpha: Int) : Int = {
-            actions match  {
+    def maxscore(role: Role, state: MachineState, alpha: Int, beta: Int): Int = {
+        def helper(actions: List[Move], curAlpha: Int): Int = {
+            actions match {
                 case Nil => curAlpha
                 case head :: tail =>
                     val result = minscore(role, head, state, curAlpha, beta)
@@ -35,12 +39,13 @@ class AlphaBetaPlayer extends NotifyingPlayer {
                     }
             }
         }
-        if(getStateMachine.isTerminal(state)) {
+        if (getStateMachine.isTerminal(state)) {
             getStateMachine.getGoal(state, role)
         } else {
             helper(getStateMachine.getLegalMoves(state, role).toList, alpha)
         }
     }
+
     /**
     function minscore (role,action,state,alpha,beta)
      {var opponent = findopponent(role,game);
@@ -56,20 +61,20 @@ class AlphaBetaPlayer extends NotifyingPlayer {
        return beta}
       */
 
-    def minscore(role: Role, action: Move, state: MachineState, alpha: Int, beta: Int) : Int = {
+    def minscore(role: Role, action: Move, state: MachineState, alpha: Int, beta: Int): Int = {
         def movesByRole(nextAction: Move) = {
-//            println(s"role: ${role.getName} roles[0]: ${getStateMachine.getRoles.get(0).getName}")
-            if (role.getName == getStateMachine.getRoles.get(0).getName) {
+            //            println(s"role: ${role.getName} roles[0]: ${getStateMachine.getRoles.get(0).getName}")
+            if (role == getStateMachine.getRoles.get(0)) {
                 List(action, nextAction)
             } else {
                 List(nextAction, action)
             }
         }
         val opponent = findOpponent(role)
-//        println(s"Opponent for ${role.toString} is ${opponent.toString}")
+        //        println(s"Opponent for ${role.toString} is ${opponent.toString}")
         val opponentActions = getStateMachine.getLegalMoves(state, opponent)
 
-        def helper(actions: List[Move], curBeta: Int) : Int = {
+        def helper(actions: List[Move], curBeta: Int): Int = {
             actions match {
                 case Nil => beta
                 case head :: tail =>
