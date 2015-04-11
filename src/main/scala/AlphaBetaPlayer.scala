@@ -63,7 +63,6 @@ class AlphaBetaPlayer extends NotifyingPlayer {
 
     def minscore(role: Role, action: Move, state: MachineState, alpha: Int, beta: Int): Int = {
         def movesByRole(nextAction: Move) = {
-            //            println(s"role: ${role.getName} roles[0]: ${getStateMachine.getRoles.get(0).getName}")
             if (role == getStateMachine.getRoles.get(0)) {
                 List(action, nextAction)
             } else {

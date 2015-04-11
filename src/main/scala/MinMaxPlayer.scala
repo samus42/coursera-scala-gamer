@@ -16,8 +16,13 @@ class MinMaxPlayer extends NotifyingPlayer {
 
 
     override def bestmove(role: Role, state: MachineState) = {
+        def showScore(action: Move) = {
+            val result = minscore(role, action, state)
+            println(s"Move: $action result = $result")
+            result
+        }
         val actions = getStateMachine.getLegalMoves(state, role)
-        actions.maxBy(a => minscore(role, a, state))
+        actions.maxBy(showScore)
     }
 
     /**
@@ -36,14 +41,17 @@ class MinMaxPlayer extends NotifyingPlayer {
      */
     private def minscore(role: Role, action: Move, state: MachineState) : Int = {
 
-        val opponent = getStateMachine.getRoles.filterNot(_.getName != role.getName).head
+        def movesByRole(nextAction: Move) = {
+                    if (role == getStateMachine.getRoles.get(0)) {
+                        List(action, nextAction)
+                    } else {
+                        List(nextAction, action)
+                    }
+                }
+        val opponent = findOpponent(role)
         val opponentActions = getStateMachine.getLegalMoves(state, opponent)
         val scores = opponentActions.map(a => {
-            val move = if (role.getName != getRole.getName) {
-                List(action, a)
-            } else {
-                List(a, action)
-            }
+            val move = movesByRole(a)
             val newState = getStateMachine.getNextState(state, move)
             maxscore(role, newState)
         })
