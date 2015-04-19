@@ -9,7 +9,7 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
     var me: Role = _
     var opponent: Role = _
 
-    val maxDepth = 4
+    val maxDepth = 5
 
     override def bestmove(role: Role, state: MachineState) = {
         me = role
@@ -23,7 +23,7 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
         var bestMove = moves(0)
         var score = 0
         moves.foreach(move => {
-            val result = getMinScore(move, getCurrentState(), 0)
+            val result = getMinScore(move, getCurrentState(), 1)
             outMoveScore(move, result)
             if (result > score) {
                 score = result
@@ -50,8 +50,12 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
 
             val newState = getStateMachine().getNextState(state, tryMove)
             val result = getMaxScore(newState, level + 1)
-            if (result < score) {
-                score = result;
+            if (result == 0) {
+//                println("min returning 0!")
+                return 0
+            }
+            else if (result < score) {
+                score = result
             }
         })
         score
@@ -59,7 +63,9 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
 
     private def getMaxScore(state: MachineState, level: Int): Int = {
         if (getStateMachine().isTerminal(state)) {
-            getStateMachine().getGoal(state, me)
+            val goalScore = getStateMachine().getGoal(state, me)
+//            println(s"goalScore: $goalScore at level: $level")
+            goalScore
         } else if(level >= maxDepth) {
             0
         }
@@ -68,8 +74,12 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
             var score = 0
             moves.foreach(move => {
                 val result = getMinScore(move, state, level)
-                if (result > score) {
-                    score = result;
+                if (result == 100) {
+                    println("max returning 100!")
+                    return 100
+                }
+                else if (result > score) {
+                    score = result
                 }
             })
             score
