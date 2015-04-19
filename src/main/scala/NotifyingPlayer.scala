@@ -10,7 +10,7 @@ trait NotifyingPlayer extends SampleGamer {
         val stop = System.currentTimeMillis()
 
         notifyObservers(new GamerSelectedMoveEvent(getStateMachine.getLegalMoves(getCurrentState, getRole), selection, stop - start))
-
+        println(s"Selected move: $selection , Total Time: ${stop - start}")
         selection
     }
 

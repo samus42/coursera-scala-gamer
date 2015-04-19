@@ -14,9 +14,10 @@ class MinMaxLimitedDepthPlayer extends NotifyingPlayer {
            return action}
      */
 
-    val maxDepth = 3
+    val maxDepth = 4
 
     override def bestmove(role: Role, state: MachineState) = {
+        println("New move starting: " + state.toString)
         val startTime = System.currentTimeMillis()
         def showScore(action: Move) = {
             val result = minscore(role, action, state, 0)
