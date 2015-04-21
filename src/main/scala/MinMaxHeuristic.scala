@@ -54,7 +54,7 @@ class MinMaxHeuristic extends NotifyingPlayer {
     }
 
     private def evaluateState(role: Role, state: MachineState) = {
-        val result = focus(role, state)
+        val result = simpleGoalProximity(role, state)
         if (result > 100) {
             println("over 100")
             100
@@ -73,6 +73,13 @@ class MinMaxHeuristic extends NotifyingPlayer {
         100.0 - ((actions / findFeasibles(role, state)) * 100)
     }
 
+    private def simpleGoalProximity(role: Role, state: MachineState) = {
+        getStateMachine.getGoal(state, role)
+    }
+
+    private def advancedGoalProximity(role: Role, state: MachineState) = {
+
+    }
     private def findFeasibles(role: Role, state: MachineState) = {
         //according to TA, GGP base doesn't have the required method, so just give it an average
         20.0f
