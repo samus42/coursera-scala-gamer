@@ -1,16 +1,18 @@
 import org.ggp.base.util.statemachine.{MachineState, Move, Role}
 
 import scala.collection.JavaConversions._
+import scala.util.Random
 
 class MinMaxHeuristic extends NotifyingPlayer {
-    val maxDepth = 3
+    val maxDepth = 2
+    val numMonteCarloCharges = 4
 
     override def bestmove(role: Role, state: MachineState) = {
         println("New move starting: " + state.toString)
         val startTime = System.currentTimeMillis()
         def showScore(action: Move) = {
             val result = minscore(role, action, state, 0)
-//            println(s"Move: $action result = $result - Time Taken: ${System.currentTimeMillis() - startTime}")
+            //            println(s"Move: $action result = $result - Time Taken: ${System.currentTimeMillis() - startTime}")
             result
         }
         val actions = getStateMachine.getLegalMoves(state, role)
@@ -41,8 +43,12 @@ class MinMaxHeuristic extends NotifyingPlayer {
         getStateMachine.getRoles.find(_.getName != role.getName).getOrElse(role)
     }
 
+    private def isTerminal(role: Role, state: MachineState) = {
+        getStateMachine.isTerminal(state) || getStateMachine.getGoal(state, role) == 100
+    }
+
     private def maxscore(role: Role, state: MachineState, level: Int): Int = {
-        if (getStateMachine.isTerminal(state)) {
+        if (isTerminal(role, state)) {
             getStateMachine.getGoal(state, role)
         } else if (level >= maxDepth) {
             evaluateState(role, state)
@@ -54,7 +60,8 @@ class MinMaxHeuristic extends NotifyingPlayer {
     }
 
     private def evaluateState(role: Role, state: MachineState) = {
-        val result = simpleGoalProximity(role, state)
+//        val result = simpleGoalProximity(role, state)
+        val result = monteCarlo(role, state, numMonteCarloCharges)
         if (result > 100) {
             println("over 100")
             100
@@ -80,8 +87,29 @@ class MinMaxHeuristic extends NotifyingPlayer {
     private def advancedGoalProximity(role: Role, state: MachineState) = {
 
     }
+
     private def findFeasibles(role: Role, state: MachineState) = {
         //according to TA, GGP base doesn't have the required method, so just give it an average
         20.0f
+    }
+
+    private def monteCarlo(role: Role, state: MachineState, numProbes: Int) = {
+        def depthcharge(role: Role, state: MachineState): Int = {
+            if (isTerminal(role, state)) {
+                getStateMachine.getGoal(state, role)
+            } else {
+                val moves = getStateMachine.getRoles.map(r => {
+                    val roleMoves = getStateMachine.getLegalMoves(state, r)
+                    roleMoves(Random.nextInt(roleMoves.length))
+                })
+                val newState = getStateMachine.getNextState(state, moves)
+                depthcharge(role, newState)
+            }
+        }
+        val results = for {
+            i <- 1 to numProbes
+        } yield depthcharge(role, state)
+
+        (results.sum.toFloat / numProbes.toFloat).toInt
     }
 }
