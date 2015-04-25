@@ -4,12 +4,24 @@ import scala.collection.JavaConversions._
 import scala.util.Random
 
 class MinMaxHeuristic extends NotifyingPlayer {
-    val maxDepth = 2
+    val maxDepth = 4
     val numMonteCarloCharges = 4
+    var playclock = 20000
+    var depthTimeout = 20000L
+    private def setupTimeouts(): Unit = {
+        playclock = getMatch.getPlayClock * 1000
+        val startTime = System.currentTimeMillis()
+        val adjustment = (playclock.toFloat * .6f).toInt
+        println(s"Depth Timeout: $adjustment")
+        depthTimeout = startTime + adjustment.toLong
+    }
+
+    private def depthHasTimedOut = System.currentTimeMillis() > depthTimeout
 
     override def bestmove(role: Role, state: MachineState) = {
         println("New move starting: " + state.toString)
         val startTime = System.currentTimeMillis()
+        setupTimeouts()
         def showScore(action: Move) = {
             val result = minscore(role, action, state, 0)
             //            println(s"Move: $action result = $result - Time Taken: ${System.currentTimeMillis() - startTime}")
@@ -50,7 +62,7 @@ class MinMaxHeuristic extends NotifyingPlayer {
     private def maxscore(role: Role, state: MachineState, level: Int): Int = {
         if (isTerminal(role, state)) {
             getStateMachine.getGoal(state, role)
-        } else if (level >= maxDepth) {
+        } else if (level >= maxDepth || depthHasTimedOut) {
             evaluateState(role, state)
         }
         else {
