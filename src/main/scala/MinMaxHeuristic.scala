@@ -19,8 +19,6 @@ class MinMaxHeuristic extends NotifyingPlayer {
     private def depthHasTimedOut = System.currentTimeMillis() > depthTimeout
 
     override def bestmove(role: Role, state: MachineState) = {
-        println("New move starting: " + state.toString)
-        val startTime = System.currentTimeMillis()
         setupTimeouts()
         def showScore(action: Move) = {
             val result = minscore(role, action, state, 0)

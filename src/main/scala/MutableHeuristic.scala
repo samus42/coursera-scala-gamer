@@ -1,29 +1,31 @@
 import org.ggp.base.util.statemachine.{MachineState, Move, Role}
 
 import scala.collection.JavaConversions._
+import scala.util.Random
 
 /**
  * based on : https://github.com/ch-ms/ggp-players/blob/master/ChmsMinmaxPlayer.java
  */
-class MutableMinMaxLimitedDepth extends NotifyingPlayer {
+class MutableHeuristic extends NotifyingPlayer {
     var me: Role = _
     var opponent: Role = _
+    val numMonteCarloCharges = 2
 
-    val maxDepth = 5
+    val maxDepth = 1
 
     override def bestmove(role: Role, state: MachineState) = {
         me = role
-        for (r: Role <- getStateMachine().getRoles()) {
+        for (r: Role <- getStateMachine.getRoles) {
             if (!r.equals(me)) {
                 opponent = r
             }
         }
 
-        val moves = getStateMachine().getLegalMoves(getCurrentState(), me)
+        val moves = getStateMachine.getLegalMoves(getCurrentState, me)
         var bestMove = moves(0)
         var score = 0
         moves.foreach(move => {
-            val result = getMinScore(move, getCurrentState(), 1)
+            val result = getMinScore(move, getCurrentState, 1)
             outMoveScore(move, result)
             if (result > score) {
                 score = result
@@ -35,7 +37,7 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
     }
 
     private def getMinScore(action: Move, state: MachineState, level: Int): Int = {
-        val moves = getStateMachine().getLegalMoves(state, opponent)
+        val moves = getStateMachine.getLegalMoves(state, opponent)
         var score = 100
         moves.foreach(move => {
             var tryMove: List[Move] = List()
@@ -48,10 +50,9 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
                 }
             })
 
-            val newState = getStateMachine().getNextState(state, tryMove)
+            val newState = getStateMachine.getNextState(state, tryMove)
             val result = getMaxScore(newState, level + 1)
             if (result == 0) {
-//                println("min returning 0!")
                 return 0
             }
             else if (result < score) {
@@ -62,15 +63,14 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
     }
 
     private def getMaxScore(state: MachineState, level: Int): Int = {
-        if (getStateMachine().isTerminal(state)) {
-            val goalScore = getStateMachine().getGoal(state, me)
-//            println(s"goalScore: $goalScore at level: $level")
+        if (getStateMachine.isTerminal(state)) {
+            val goalScore = getStateMachine.getGoal(state, me)
             goalScore
-        } else if(level >= maxDepth) {
-            0
+        } else if (level >= maxDepth) {
+            monteCarlo(me, state, numMonteCarloCharges)
         }
         else {
-            val moves = getStateMachine().getLegalMoves(state, me)
+            val moves = getStateMachine.getLegalMoves(state, me)
             var score = 0
             moves.foreach(move => {
                 val result = getMinScore(move, state, level)
@@ -88,5 +88,30 @@ class MutableMinMaxLimitedDepth extends NotifyingPlayer {
 
     private def outMoveScore(move: Move, result: Integer) {
         println(s"move is $move result is $result")
+    }
+
+
+    private def isTerminal(role: Role, state: MachineState) = {
+        getStateMachine.isTerminal(state) || getStateMachine.getGoal(state, role) == 100
+    }
+
+    private def monteCarlo(role: Role, state: MachineState, numProbes: Int) = {
+        def depthcharge(role: Role, state: MachineState): Int = {
+            if (isTerminal(role, state)) {
+                getStateMachine.getGoal(state, role)
+            } else {
+                val moves = getStateMachine.getRoles.map(r => {
+                    val roleMoves = getStateMachine.getLegalMoves(state, r)
+                    roleMoves(Random.nextInt(roleMoves.length))
+                })
+                val newState = getStateMachine.getNextState(state, moves)
+                depthcharge(role, newState)
+            }
+        }
+        val results = for {
+            i <- 1 to numProbes
+        } yield depthcharge(role, state)
+
+        (results.sum.toFloat / numProbes.toFloat).toInt
     }
 }

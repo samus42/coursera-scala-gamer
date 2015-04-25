@@ -6,6 +6,7 @@ import scala.collection.JavaConversions._
 trait NotifyingPlayer extends SampleGamer {
     override def stateMachineSelectMove(timeout: Long) = {
         val start = System.currentTimeMillis()
+        println("New move starting....")
 
         val selection = bestmove(getRole, getCurrentState)
         val stop = System.currentTimeMillis()
