@@ -12,6 +12,9 @@ class MCTSSinglePlayer extends NotifyingPlayer {
             cachedChildren match {
                 case Some(c) => c
                 case None =>
+                    if (getStateMachine.isTerminal(currentState)) {
+                        println("TERMINAL STATE EXPANSION")
+                    }
                     cachedChildren = Some(getStateMachine.getLegalMoves(currentState, currentPlayer).map {
                         move =>
                             val nextState = getStateMachine.getNextState(currentState, List(move))
