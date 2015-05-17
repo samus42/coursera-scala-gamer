@@ -4,7 +4,9 @@ import org.ggp.base.util.statemachine.{MachineState, Move, Role}
 
 import scala.collection.JavaConversions._
 import scala.util.Random
-
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 class MCTSMultiPlayer extends NotifyingPlayer {
     var me: Role = _
     var roles: List[Role] = _
@@ -93,7 +95,8 @@ class MCTSMultiPlayer extends NotifyingPlayer {
     private def checkForQuickDecision(availableMoves: List[Move], role: Role, state: MachineState): Option[Move] = {
         if (availableMoves.size == 1) availableMoves.headOption
         else {
-            availableMoves.find(m => getStateMachine.getGoal(getStateMachine.getNextState(state, List(m)), role) == 100)
+//            availableMoves.find(m => getStateMachine.getGoal(getStateMachine.getNextState(state, List(m)), role) == 100)
+            None
         }
     }
 
@@ -128,10 +131,13 @@ class MCTSMultiPlayer extends NotifyingPlayer {
                 depthcharge(role, newState)
             }
         }
-        val results = for {
-            i <- 1 to numProbes
-        } yield depthcharge(role, state)
 
+
+        val resultFutures = for {
+            i <- 1 to numProbes
+        } yield future { depthcharge(role, state) }
+
+        val results = Await.result(Future.sequence(resultFutures), 10.seconds)
 
         val combinedResults = results.transpose.map(_.sum)
         combinedResults.map(_ / numProbes.toFloat).toArray
