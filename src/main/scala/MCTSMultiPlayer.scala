@@ -65,10 +65,11 @@ class MCTSMultiPlayer extends NotifyingPlayer {
         roles = getStateMachine.getRoles.toList
         val root = GameNode(state, role)
 
-        val availableMoves: util.List[Move] = getStateMachine.getLegalMoves(state, role)
+        val availableMoves: List[Move] = getStateMachine.getLegalMoves(state, role).toList
         println("Available Moves: " + availableMoves)
-        if (availableMoves.size() == 1) {
-            availableMoves.head
+        val quickDecision = checkForQuickDecision(availableMoves, role, state)
+        if (quickDecision.isDefined) {
+            quickDecision.get
         } else {
             val playClock = getMatch.getPlayClock * 1000
             val endTime = System.currentTimeMillis() + playClock
@@ -86,6 +87,13 @@ class MCTSMultiPlayer extends NotifyingPlayer {
 
             println("Utilities: " + root.children.map(_.getUtility(role)).mkString(","))
             root.children.maxBy(_.getUtility(role)).move
+        }
+    }
+
+    private def checkForQuickDecision(availableMoves: List[Move], role: Role, state: MachineState): Option[Move] = {
+        if (availableMoves.size == 1) availableMoves.headOption
+        else {
+            availableMoves.find(m => getStateMachine.getGoal(getStateMachine.getNextState(state, List(m)), role) == 100)
         }
     }
 
