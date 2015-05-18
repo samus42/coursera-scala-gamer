@@ -95,8 +95,10 @@ class MCTSMultiPlayer extends NotifyingPlayer {
     private def checkForQuickDecision(availableMoves: List[Move], role: Role, state: MachineState): Option[Move] = {
         if (availableMoves.size == 1) availableMoves.headOption
         else {
-//            availableMoves.find(m => getStateMachine.getGoal(getStateMachine.getNextState(state, List(m)), role) == 100)
-            None
+            val jointMoves = getStateMachine.getLegalJointMoves(state)
+            val win = jointMoves.find(m => getStateMachine.getGoal(getStateMachine.getNextState(state, m), role) == 100)
+            if (win.isDefined) println("Quick win found!")
+            win.map(_.head)
         }
     }
 
